@@ -1,0 +1,53 @@
+# ---- 大体积的本地构建产物，不要提交到 GitHub ----
+# 便携版 .NET SDK（约 300MB）
+_src/dotnet/
+_src/tools/
+_src/*.zip
+_src/*.tar
+_src/*.tar.gz
+_src/extract/
+_src/*.log
+# 官方原始源码的副本（约 500KB，仅供本地 diff 对比）
+_src/tree/
+# 自动化测试用的临时构建目录（里面是编译产物，不是源码）
+_src/test/build/
+
+# ---- 编译输出 ----
+bin/
+obj/
+work/bin/
+work/obj/
+work/SAM.API/bin/
+work/SAM.API/obj/
+work/SAM.Game/bin/
+work/SAM.Game/obj/
+work/SAM.Picker/bin/
+work/SAM.Picker/obj/
+work/upload/
+upload/
+
+# ---- 编译好的二进制（仓库只放源码；要发布 exe 请走 GitHub Releases）----
+# 注意：下面的规则只作用于仓库根目录，不会影响 work/ 里的源码
+/*.exe
+/*.dll
+/*.pdb
+# 但运行时需要的第三方依赖 dll 也别提交（同理由 Releases 分发）
+/System.*.dll
+
+# ---- 调试与临时文件 ----
+*.pdb
+*_wpftmp.csproj
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# ---- 原版二进制备份（zlib 允许再分发，但仓库没必要顺带分发原版 exe）----
+original-backup/
+
+# ---- 截图（调试过程产物）----
+_shots/
+
+# ---- 本程序运行时生成的进度存档 ----
+spread-*.json

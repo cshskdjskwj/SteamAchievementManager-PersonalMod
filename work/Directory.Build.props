@@ -1,0 +1,17 @@
+<Project>
+
+  <!--
+    构建环境适配（由魔改工作添加，不影响上游源码）：
+    新版 .NET SDK 在编译 .NET Framework 工程时，对 .resx 里的非字符串资源
+    （例如 System.Drawing.Bitmap 图标）需要使用预序列化资源格式。
+    官方仓库原本用 VS2019 编译，所以要在这里补上这两个开关。
+  -->
+  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

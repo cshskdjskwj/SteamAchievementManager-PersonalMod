@@ -1,0 +1,289 @@
+/* Copyright (c) 2024 Rick (rick 'at' gibbed 'dot' us)
+ *
+ * This software is provided 'as-is', without any express or implied
+ * warranty. In no event will the authors be held liable for any damages
+ * arising from the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would
+ *    be appreciated but is not required.
+ *
+ * 2. Altered source versions must be plainly marked as such, and must not
+ *    be misrepresented as being the original software.
+ *
+ * 3. This notice may not be removed or altered from any source
+ *    distribution.
+ */
+
+using System;
+using System.Runtime.InteropServices;
+using SAM.API.Interfaces;
+
+namespace SAM.API.Wrappers
+{
+    public class SteamUserStats013 : NativeWrapper<ISteamUserStats013>
+    {
+        #region GetStatValue (int)
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeGetStatInt(IntPtr self, IntPtr name, out int data);
+
+        public bool GetStatValue(string name, out int value)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                var call = this.GetFunction<NativeGetStatInt>(this.Functions.GetStatInteger);
+                return call(this.ObjectAddress, nativeName.Handle, out value);
+            }
+        }
+        #endregion
+
+        #region GetStatValue (float)
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeGetStatFloat(IntPtr self, IntPtr name, out float data);
+
+        public bool GetStatValue(string name, out float value)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                var call = this.GetFunction<NativeGetStatFloat>(this.Functions.GetStatFloat);
+                return call(this.ObjectAddress, nativeName.Handle, out value);
+            }
+        }
+        #endregion
+
+        #region SetStatValue (int)
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeSetStatInt(IntPtr self, IntPtr name, int data);
+
+        public bool SetStatValue(string name, int value)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                return this.Call<bool, NativeSetStatInt>(
+                    this.Functions.SetStatInteger,
+                    this.ObjectAddress,
+                    nativeName.Handle,
+                    value);
+            }
+        }
+        #endregion
+
+        #region SetStatValue (float)
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeSetStatFloat(IntPtr self, IntPtr name, float data);
+
+        public bool SetStatValue(string name, float value)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                return this.Call<bool, NativeSetStatFloat>(
+                    this.Functions.SetStatFloat,
+                    this.ObjectAddress,
+                    nativeName.Handle,
+                    value);
+            }
+        }
+        #endregion
+
+        #region GetAchievement
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeGetAchievement(
+            IntPtr self,
+            IntPtr name,
+            [MarshalAs(UnmanagedType.I1)] out bool isAchieved);
+
+        public bool GetAchievement(string name, out bool isAchieved)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                var call = this.GetFunction<NativeGetAchievement>(this.Functions.GetAchievement);
+                return call(this.ObjectAddress, nativeName.Handle, out isAchieved);
+            }
+        }
+        #endregion
+
+        #region SetAchievement
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeSetAchievement(IntPtr self, IntPtr name);
+
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeClearAchievement(IntPtr self, IntPtr name);
+
+        public bool SetAchievement(string name, bool state)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                if (state == false)
+                {
+                    return this.Call<bool, NativeClearAchievement>(
+                        this.Functions.ClearAchievement,
+                        this.ObjectAddress,
+                        nativeName.Handle);
+                }
+
+                return this.Call<bool, NativeSetAchievement>(
+                    this.Functions.SetAchievement,
+                    this.ObjectAddress,
+                    nativeName.Handle);
+            }
+        }
+        #endregion
+
+        #region GetAchievementAndUnlockTime
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeGetAchievementAndUnlockTime(
+            IntPtr self,
+            IntPtr name,
+            [MarshalAs(UnmanagedType.I1)] out bool isAchieved,
+            out uint unlockTime);
+
+        public bool GetAchievementAndUnlockTime(string name, out bool isAchieved, out uint unlockTime)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                var call = this.GetFunction<NativeGetAchievementAndUnlockTime>(this.Functions.GetAchievementAndUnlockTime);
+                return call(this.ObjectAddress, nativeName.Handle, out isAchieved, out unlockTime);
+            }
+        }
+        #endregion
+
+        #region RequestGlobalAchievementPercentages
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        private delegate CallHandle NativeRequestGlobalAchievementPercentages(IntPtr self);
+
+        /// <summary>
+        /// Asks Steam for the global (all users) unlock percentage of every achievement
+        /// of the current app. The answer arrives through the GameAchievementData callback (id 1102).
+        /// </summary>
+        public CallHandle RequestGlobalAchievementPercentages()
+        {
+            return this.Call<CallHandle, NativeRequestGlobalAchievementPercentages>(
+                this.Functions.RequestGlobalAchievementPercentages,
+                this.ObjectAddress);
+        }
+        #endregion
+
+        #region GetAchievementAchievedPercent
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeGetAchievementAchievedPercent(
+            IntPtr self,
+            IntPtr name,
+            out float percent);
+
+        /// <summary>
+        /// Global unlock percentage of a single achievement. Only valid after
+        /// RequestGlobalAchievementPercentages has completed.
+        /// </summary>
+        public bool GetAchievementAchievedPercent(string name, out float percent)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                var call = this.GetFunction<NativeGetAchievementAchievedPercent>(
+                    this.Functions.GetAchievementAchievedPercent);
+                return call(this.ObjectAddress, nativeName.Handle, out percent);
+            }
+        }
+        #endregion
+
+        #region StoreStats
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeStoreStats(IntPtr self);
+
+        public bool StoreStats()
+        {
+            return this.Call<bool, NativeStoreStats>(this.Functions.StoreStats, this.ObjectAddress);
+        }
+        #endregion
+
+        #region GetAchievementIcon
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        private delegate int NativeGetAchievementIcon(IntPtr self, IntPtr name);
+
+        public int GetAchievementIcon(string name)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            {
+                return this.Call<int, NativeGetAchievementIcon>(
+                    this.Functions.GetAchievementIcon,
+                    this.ObjectAddress,
+                    nativeName.Handle);
+            }
+        }
+        #endregion
+
+        #region GetAchievementDisplayAttribute
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        private delegate IntPtr NativeGetAchievementDisplayAttribute(IntPtr self, IntPtr name, IntPtr key);
+
+        public string GetAchievementDisplayAttribute(string name, string key)
+        {
+            using (var nativeName = NativeStrings.StringToStringHandle(name))
+            using (var nativeKey = NativeStrings.StringToStringHandle(key))
+            {
+                var result = this.Call<IntPtr, NativeGetAchievementDisplayAttribute>(
+                    this.Functions.GetAchievementDisplayAttribute,
+                    this.ObjectAddress,
+                    nativeName.Handle,
+                    nativeKey.Handle);
+                return NativeStrings.PointerToString(result);
+            }
+        }
+        #endregion
+
+        #region RequestUserStats
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        private delegate CallHandle NativeRequestUserStats(IntPtr self, ulong steamIdUser);
+
+        public CallHandle RequestUserStats(ulong steamIdUser)
+        {
+            return this.Call<CallHandle, NativeRequestUserStats>(this.Functions.RequestUserStats, this.ObjectAddress, steamIdUser);
+        }
+        #endregion
+
+        #region ResetAllStats
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private delegate bool NativeResetAllStats(IntPtr self, [MarshalAs(UnmanagedType.I1)] bool achievementsToo);
+
+        public bool ResetAllStats(bool achievementsToo)
+        {
+            return this.Call<bool, NativeResetAllStats>(
+                this.Functions.ResetAllStats,
+                this.ObjectAddress,
+                achievementsToo);
+        }
+        #endregion
+
+        #region SetAchievementAndUnlockTime —— 已移除，不要再加回来
+        //
+        // 上游/我们都不提供"强制指定过去的解锁时间"的能力。
+        //
+        // 实测记录（2026-10，Steam 客户端新版）：
+        //   在接口虚表末尾追加 SetAchievementAndUnlockTime 槽位后调用，进程直接
+        //   0xc0000005 访问违例崩溃（faulting module = clr.dll，异常代码 0xc0000005）。
+        //   说明该客户端并未在 ISteamUserStats013 虚表中暴露此函数，读到的是越界内存。
+        //
+        // 另外，Steam 官方公开 API 里没有任何"设置历史解锁时间"的入口：
+        //   成就是通过 CMsgClientStoreUserStats2 上报的，解锁时间由 Steam 服务端盖章，
+        //   客户端只能表达"已解锁/未解锁"。
+        //
+        // 想要"看起来像长期游玩"的时间线，唯一可行且安全的方式是**用真实时间慢慢解锁**
+        // （见 README 第 7 节的"长时间铺开"模式）。
+        #endregion
+    }
+}
