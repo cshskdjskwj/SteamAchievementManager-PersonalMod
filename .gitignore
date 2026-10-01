@@ -51,3 +51,9 @@ _shots/
 
 # ---- 本程序运行时生成的进度存档 ----
 spread-*.json
+
+# ---- 发布打包目录与临时凭据（绝不入库）----
+_src/release/
+_src/gh-token.txt
+_src/poll.ps1
+_src/device-code.json
