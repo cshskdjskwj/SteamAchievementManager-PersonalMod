@@ -1,4 +1,4 @@
-# SAM 7.0.41 魔改版 — 按 Steam 全球解锁率 + 随机空闲间隔依次解锁
+﻿# SAM 7.0.41 魔改版 — 按 Steam 全球解锁率 + 随机空闲间隔依次解锁
 
 > ### ⚠️ 修改版声明（Derivation Notice）
 >
@@ -381,8 +381,6 @@ zlib 第 3 条写的是：
 > 建议 fork 之后在 commit message 和 Release 说明里也重复一遍上表，做到"改动显而易见"。
 
 ### 8.4 发布时的实操清单
-
-> 📖 完整的建仓 / 打包 / 排查步骤见 **[上传到GitHub操作指引.md](上传到GitHub操作指引.md)**（上传前可删）。
 
 - [ ] **仓库名不要用上游原名**。上游是 `SteamAchievementManager`，请用能区分的名字，
       例如 `SteamAchievementManager-Paced`、`SAM-Paced-Unlock`。避免让人误以为是官方仓库。
