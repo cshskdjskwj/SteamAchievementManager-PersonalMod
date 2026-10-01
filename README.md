@@ -1,4 +1,4 @@
-﻿# SAM 7.0.41 魔改版 — 按 Steam 全球解锁率 + 随机空闲间隔依次解锁
+# SAM 7.0.41 个人魔改版 — 按 Steam 全球解锁率 + 随机空闲间隔依次解锁
 
 > ### ⚠️ 修改版声明（Derivation Notice）
 >
@@ -6,21 +6,15 @@
 >
 > - 原版项目：[gibbed/SteamAchievementManager](https://github.com/gibbed/SteamAchievementManager)
 > - 原作者：Rick (rick 'at' gibbed 'dot' us)
-> - 原版许可证：[zlib License](LICENSE.txt)
-> - 本仓库基于原版 **7.0.41** 的源码修改而来，**改动内容已在第 6.3 节逐项列出**
+> - 原版许可证：[zlib License](LICENSE.txt)（本仓库未作任何修改）
+> - 本仓库基于原版 **7.0.41** 的源码修改而来，**相对上游的改动已在第 8.3 节逐项列出**
 > - **未获**原作者背书或审核，请不要把它当成原版下载
+> - 非官方个人魔改版，与原作者无关
 >
 > 依据 zlib 许可证第 2 条：
 > `Altered source versions must be plainly marked as such, and must not be misrepresented as being
 > the original software.`
-> 上表即为该条款要求的"明确标注"。原版权声明与许可证全文在所有改动文件中均被完整保留，
-> `LICENSE.txt` 未作任何修改。
-
-> ### 我自己的部分
->
-> 除上游代码外，本魔改新增的文件与改动由本仓库作者编写，按 **MIT License** 发布
-> （见 [LICENSE-MIT.txt](LICENSE-MIT.txt)）。<!-- 如果你不想加自己的许可，删掉这一行和那个文件即可 -->
-> 上游原有代码仍然只受 zlib License 约束。
+> 上述清单即为该条款要求的"明确标注"。原版权声明与许可证全文在所有改动文件中均被完整保留。
 
 ---
 
@@ -82,7 +76,7 @@
 ### 2.1 先备份（强烈建议）
 
 - 用 SAM 改动成就前，建议先关掉 Steam 云同步，或至少记下当前状态。
-- 本目录 `original-backup\` 里是**原版 7.0.41 的三个文件**，随时可以还原成原版。
+- 原版 7.0.41 的三个文件（exe/dll）请从上游 Releases 自行下载备份，本仓库不附带原版二进制。
 
 ### 2.2 运行
 
@@ -90,7 +84,7 @@
 1) 关闭 Steam 客户端（SAM 需要独占连接，游戏也要先退出）
 2) 双击 SAM.Picker.exe → 在游戏列表里搜索并双击你的游戏
 3) 等成就列表装载完，确认 Unlock Rate 列出现百分比
-4) 点 Unlock by Rate (paced)，按需配置，确认后开始
+4) 点工具栏的 【按率刷完】，配置好间隔后点「开始按节奏解锁」
 ```
 
 > 直接把 `SAM.Game.exe <appid>` 也可以直接打开某个游戏（appid 是 Steam 商店链接里的数字）。
@@ -105,7 +99,7 @@
 | `SAM.API.dll` | Steam 原生接口封装（新增了全球解锁率相关调用） |
 | `System.Resources.Extensions.dll` 等 4 个 dll | 用新版 SDK 编译 .NET Framework 工程所需的运行时库，**不要删** |
 | `*.exe.config` | 运行时配置 |
-| `original-backup\` | 原版 7.0.41 文件备份 |
+| uild.ps1 / un.ps1 | 一键编译 / 启动调试脚本 |
 
 ---
 
@@ -119,7 +113,7 @@
 | `work\Directory.Build.props` | 构建环境适配 |
 | `build.ps1` | 一键编译脚本 |
 | `run.ps1` | 启动调试脚本 |
-| `_src\dotnet\` | 便携版 .NET SDK 9.0.305（不写注册表、不污染系统） |
+| `_src\test\` | 自动化测试用的窗口操作辅助脚本 |
 | `_src\tree\` | 官方 7.0.41 原始源码，未改动，方便 diff 对比 |
 
 ### 3.2 编译
@@ -317,96 +311,83 @@ Steam 的成就数据是客户端通过 `CMsgClientStoreUserStats2` 这类消息
 
 ---
 
-## 8. 许可与开源分发（把这个魔改版发到 GitHub 时看这里）
+## 8. 许可
 
-### 8.1 结论：可以发，而且不必改用别的许可证
+### 8.1 本项目使用什么许可
 
-上游是 **zlib License**，属于**宽松许可证（permissive）**，不是 GPL 那种传染性许可证。
-这意味着：
+上游 gibbed/SteamAchievementManager 采用 **zlib License**，这是一种**宽松许可证（permissive）**，
+不是 GPL 那种传染性许可证：
 
-| 事项 | 是否要求 |
+| 事项 | 是否允许 / 要求 |
 | --- | --- |
-| 允许修改 | ✅ 明示允许（授权语里 `to alter it`） |
-| 允许再分发（含修改版） | ✅ 明示允许（`redistribute it freely`） |
-| 允许闭源 / 不公开改动 | ✅ 允许（zlib 无 copyleft、无 share-alike 义务） |
-| 允许商用 | ✅ 明示允许 |
-| 必须沿用 zlib 许可你的衍生代码 | ❌ **不要求**（但保留原声明是必须的，见下） |
-| 必须署名原作者 | ⚠️ 见 6.2，实际按"保留声明"来执行最稳 |
+| 修改 | ✅ 明示允许（授权语中的 `to alter it`） |
+| 再分发（含修改版） | ✅ 明示允许（`redistribute it freely`） |
+| 商用 | ✅ 明示允许 |
+| 闭源 / 不公开改动 | ✅ 允许（zlib 无 copyleft、无 share-alike 义务） |
+| 衍生代码必须沿用 zlib | ❌ 不要求 |
 
-### 8.2 什么必须原样保留
+**本仓库没有附加自己的许可证。** 仓库内所有代码（含本次新增的文件）统一适用上游的
+zlib License，完整原文见 [`LICENSE.txt`](LICENSE.txt)。这份文件与上游**逐字节一致**
+（SHA256 `E4BFF363695D6FD3CC517CCCF2821D8A0887389C49840F23A758920133A0F35C`），未作任何改动。
 
-zlib 第 3 条写的是：
+### 8.2 本仓库如何遵守 zlib 的三条限制
 
-> The origin of this software must not be misrepresented; you must not claim that you wrote
-> the original software. […] **you must not remove or alter the notice from any source distribution.**
+zlib 的三条限制是：
 
-关键点：**"不得移除或修改"的对象是那份 notice（许可证声明原文），而不是你的 README、也不是你的许可证文件命名。**
+> 1. The origin of this software must not be misrepresented; you must not claim that you wrote
+>    the original software. […]
+> 2. **Altered source versions must be plainly marked as such**, and must not be misrepresented
+>    as being the original software.
+> 3. This notice may not be removed or altered from any source distribution.
 
-所以必须做到的是：
+对应到本仓库：
 
-1. **`LICENSE.txt` 原文一字不改**——本仓库根目录及 `SAM.API/`、`SAM.Game/`、`SAM.Picker/` 下的
-   四份 `LICENSE.txt` 均与上游逐字节一致（SHA256 均为 `E4BFF363695D6FD3CC517CCCF2821D8A0887389C49840F23A758920133A0F35C`）。
-2. **源文件顶部的版权头保留**——每个 `.cs` 文件开头的 `Copyright (c) 2024 Rick …` + zlib 全文
-   保持原样。本次新增的文件同样带上了这份头（因为是从原文件派生的）。
-3. **在你的 README / 仓库描述里明确标注改动**——这是 zlib 第 2 条 `Altered source versions must be
-   plainly marked as such` 的落地方式。本 README 开头那段声明 + 6.3 的清单就是在做这件事。
+1. **来源未被歪曲**：README 顶部显著位置写明了原版项目、原作者、原版许可，
+   并声明本仓库**不是**官方版本、**未获**原作者背书。
+2. **改动已被明确标注**：见下方 8.3 的逐项清单。
+3. **许可证声明未被移除或修改**：`LICENSE.txt` 在仓库根目录及 `SAM.API/`、`SAM.Game/`、
+   `SAM.Picker/` 下共四份，全部与上游逐字节一致；每个 `.cs` 源文件顶部的
+   `Copyright (c) 2024 Rick …` 及 zlib 全文均保持原样（本次新增的文件同样带有该声明）。
 
-**不需要**的是：不用把它自己改成 zlib、不用把原作者的版权行删掉换成你的、不用给上游付钱或发邮件告知。
+### 8.3 相对上游的全部改动
 
-### 8.3 改了什么（发布时必须能一眼看到）
-
-**新增文件（7 个）**
+**新增文件（8 个）**
 
 | 文件 | 作用 |
 | --- | --- |
 | `SAM.Game/PacingSession.cs` | 节奏解锁核心：排序、随机间隔调度、单步写入与回读校验 |
-| `SAM.Game/PacingSettingsForm.cs` | 配置窗口（含预览与耗时估算） |
-| `SAM.Game/PacingScheduleForm.cs` | 运行进度窗口 |
+| `SAM.Game/PacingSettingsForm.cs` | 节奏解锁配置窗口（含预览与耗时估算） |
+| `SAM.Game/PacingScheduleForm.cs` | 运行进度窗口（进度条 / 倒计时 / 停止） |
+| `SAM.Game/SpreadSchedule.cs` | 长时间铺开：按天排期 + 进度存档 |
+| `SAM.Game/SpreadPlanForm.cs` | 长时间铺开配置窗口（起止日期 / 每日配额 / 时间窗口） |
 | `SAM.Game/GlobalAchievementPercentages.cs` | Steam Web API 回退实现 |
-| `SAM.API/Types/GameAchievementData.cs` | 回调参数结构 |
+| `SAM.API/Types/GameAchievementData.cs` | 回调参数结构（name, percent 数组） |
 | `SAM.API/Callbacks/GameAchievementData.cs` | 回调 id 1102 + 原始缓冲解析 |
-| `Directory.Build.props` | 构建环境适配（非上游文件） |
+
+另外新增了 `Directory.Build.props`（构建环境适配，非上游文件）。
 
 **修改文件（6 个）**
 
 | 文件 | 改动 |
 | --- | --- |
-| `SAM.API/Interfaces/ISteamUserStats013.cs` | 虚表末尾追加 `SetAchievementAndUnlockTime` 槽位 |
-| `SAM.API/Wrappers/SteamUserStats013.cs` | 新增 3 个原生方法封装 |
-| `SAM.Game/Manager.cs` | 解锁率获取/显示、全量缓存、排序、会话驱动、回调重入保护 |
-| `SAM.Game/Manager.Designer.cs` | 两个工具栏按钮 + 列头点击排序 |
-| `SAM.Game/SAM.Game.csproj` | 引用 `System.Runtime.Serialization` |
+| `SAM.API/Interfaces/ISteamUserStats013.cs` | 保持原虚表布局，仅加注释说明为何不定义 `SetAchievementAndUnlockTime` |
+| `SAM.API/Wrappers/SteamUserStats013.cs` | 新增 `RequestGlobalAchievementPercentages` / `GetAchievementAchievedPercent` 封装 |
+| `SAM.Game/Manager.cs` | 解锁率获取与显示、全量成就缓存、排序、节奏解锁与铺开模式的调度、回调重入保护 |
+| `SAM.Game/Manager.Designer.cs` | 新增三个工具栏按钮 + 列头点击排序 + 工具栏自动换行 |
+| `SAM.Game/SAM.Game.csproj` | 引用 `System.Runtime.Serialization`；版本号对齐 7.0.41 并标注个人魔改版 |
 | `SAM.Game/Stats/AchievementInfo.cs` | 新增 `GlobalPercent` 字段 |
 
-> 建议 fork 之后在 commit message 和 Release 说明里也重复一遍上表，做到"改动显而易见"。
+**上游原样的文件**：其余全部文件与上游 7.0.41 逐字节相同（可用
+`_src/tree/` 中的原始源码自行 diff 验证）。
 
-### 8.4 发布时的实操清单
+### 8.4 第三方组件
 
-- [ ] **仓库名不要用上游原名**。上游是 `SteamAchievementManager`，请用能区分的名字，
-      例如 `SteamAchievementManager-Paced`、`SAM-Paced-Unlock`。避免让人误以为是官方仓库。
-- [ ] **建议用「新建独立仓库」而不是 Fork**：独立仓库不会出现在上游的 Fork 列表 / Network 图里，
-      两边互不打扰；但独立仓库更要在 README 顶部给出原版链接（本仓库已给）。
-- [ ] **不需要**（也不建议）去上游仓库发 PR / Issue / Discussions 宣传，zlib 没有这个义务。
-- [ ] 在仓库 **About / 描述** 里写一句「Unofficial fork of gibbed/SteamAchievementManager
-      that adds paced unlocking（非官方衍生版）」。
-- [ ] **不要**使用上游的图标、名称暗示官方身份，也不要写"官方合作""作者授权"之类。
-- [ ] **不要 commit 便携版 .NET SDK**（`_src/dotnet/`，约 300MB，GitHub 单文件上限 100MB、
-      仓库建议 <1GB）。本目录已提供 `.gitignore`，把 `_src/dotnet/`、`bin/`、`obj/`、
-      `work/upload/`、`original-backup/` 等排除掉；编译方式在 README 第 3 节有说明。
-- [ ] 提交前自查：`LICENSE.txt` 是否逐字节未变、每个 `.cs` 是否保留原版权头、
-      README 是否明确标注了这是修改版。三条校验命令都在上传指引里。
-- [ ] 发布时**把修改后的完整源码一起给出**（本仓库 `work/` 目录即是）。zlib 第 2 条的字面
-      要求针对的是 `altered source versions`，公开源码是最省事、也最没有争议的做法。
-
-### 8.5 站外/次要依赖的许可
-
-运行时随附的几个 DLL 来自 .NET 平台（MIT 许可），与上述义务无关，但列在这里便于你写
-`THIRD-PARTY-NOTICES` 之类的文件：
+运行时随附的几个 DLL 来自 .NET 平台，均为 MIT 许可；.NET SDK 只用于构建，不随产物分发。
 
 | 组件 | 许可 |
 | --- | --- |
 | `System.Resources.Extensions.dll` | MIT |
 | `System.Memory.dll` / `System.Buffers.dll` / `System.Numerics.Vectors.dll` / `System.Runtime.CompilerServices.Unsafe.dll` | MIT |
-| .NET SDK（仅构建期，不随产物分发） | MIT |
+| .NET SDK（仅构建期） | MIT |
 
 > 以上仅为技术说明，不构成法律意见。

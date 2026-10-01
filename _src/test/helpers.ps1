@@ -1,4 +1,4 @@
-# 实测脚本：用 0~3% 区间对 2 个稀有成就做节奏解锁，并截图记录
+# 窗口操作辅助：枚举控件、读文本、模拟点击，供自动化测试使用
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type @"
