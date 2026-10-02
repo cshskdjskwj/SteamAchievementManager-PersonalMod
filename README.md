@@ -10,6 +10,8 @@
 > - 本仓库基于原版 **7.0.41** 的源码修改而来，**相对上游的改动已在第 8.3 节逐项列出**
 > - **未获**原作者背书或审核，请不要把它当成原版下载
 > - 非官方个人魔改版，与原作者无关
+> - 本仓库**只有 zlib 一种许可，没有使用 MIT**（README 里的 MIT 只指附带的微软组件，见 8.4）
+> - 逐版本更新记录见 [CHANGELOG.md](CHANGELOG.md)
 >
 > 依据 zlib 许可证第 2 条：
 > `Altered source versions must be plainly marked as such, and must not be misrepresented as being
@@ -110,7 +112,7 @@
 | `SAM.API.dll` | Steam 原生接口封装（新增了全球解锁率相关调用） |
 | `System.Resources.Extensions.dll` 等 4 个 dll | 用新版 SDK 编译 .NET Framework 工程所需的运行时库，**不要删** |
 | `*.exe.config` | 运行时配置 |
-| uild.ps1 / un.ps1 | 一键编译 / 启动调试脚本 |
+| `build.ps1` / `run.ps1` | 一键编译 / 启动调试脚本 |
 
 ---
 
@@ -168,9 +170,11 @@ _src\dotnet\dotnet.exe build work\SAM.sln -c Release -p:Platform=x86 `
 | --- | --- |
 | `work\SAM.API\Interfaces\ISteamUserStats013.cs` | 只保留原布局；**故意不定义** `SetAchievementAndUnlockTime`（见下方踩坑记录） |
 | `work\SAM.API\Wrappers\SteamUserStats013.cs` | 新增 `RequestGlobalAchievementPercentages` / `GetAchievementAchievedPercent` |
-| `work\SAM.Game\Manager.cs` | 全球解锁率获取与显示、`_AllAchievements` 全量缓存、排序、节奏解锁会话驱动、长时间铺开调度、回调重入保护 |
-| `work\SAM.Game\Manager.Designer.cs` | 新增三个工具栏按钮 + 列头点击排序 + 工具栏自动换行 |
-| `work\SAM.Game\SAM.Game.csproj` | 引用 `System.Runtime.Serialization` |
+| `work\SAM.Game\Manager.cs` | 全球解锁率获取与显示、`_AllAchievements` 全量缓存、**关闭控件自动排序**、列头本地化、节奏解锁会话驱动、长时间铺开调度、回调重入保护 |
+| `work\SAM.Game\Manager.Designer.cs` | 新增三个工具栏按钮 + 图标开关 + 语言按钮 + 列头点击排序 + 工具栏自动换行 + 窗口加宽 |
+| `work\SAM.Game\Program.cs` | 启动时确定界面语言（`--lang` / 首次运行询问 / Steam 语言探测） |
+| `work\SAM.Picker\Program.cs`、`GamePicker.cs` | 复用同一张翻译表，选择器界面本地化 |
+| `work\SAM.Game\SAM.Game.csproj`、`SAM.Picker.csproj` | 引用 `System.Runtime.Serialization`、链接共享 `Localization.cs` |
 | `work\SAM.Game\Stats\AchievementInfo.cs` | 新增 `GlobalPercent` 字段 |
 
 > ⚠️ **踩坑记录 1：虚表槽位不能想当然**
@@ -183,6 +187,17 @@ _src\dotnet\dotnet.exe build work\SAM.sln -c Release -p:Platform=x86 `
 > 后来改成都按"Valve 追加在表尾"处理，把 `SetAchievementAndUnlockTime` 放在最后。
 > 实测在当前 Steam 客户端上调用它依然 **`0xc0000005` 访问违例崩溃**（faulting module = `clr.dll`），
 > 说明这个客户端根本没有在虚表里暴露该函数。**已彻底移除**，详见第 7 节。
+>
+> ⚠️ **踩坑记录 3：`ListView.Sorting` 会偷偷覆盖你的排序（v6 修复）**
+> 上游在设计器里写了 `this._AchievementListView.Sorting = SortOrder.Ascending;`。
+> 开了这个属性后，**控件会自己按第一列（成就名）字母序重排**，把代码里按解锁率排好的
+> 次序立刻覆盖掉——表现为"点了排序按钮却像没生效"。
+> 更隐蔽的是：这条同样作用于**按率刷完**和**按天铺开**，导致解锁顺序实际走的是
+> 成就名字母序，而不是全球解锁率。修复方式是在构造时
+> `Sorting = SortOrder.None` 并清空 `ListViewItemSorter`，排序完全由自己的代码控制。
+>
+> 另外 `Clear()` + `AddRange()` 会触发 `ItemCheck` → `OnCheckAchievement` → `GetAchievements()`，
+> 那条路径会把列表按原始顺序重建，所以这一段也要用 `_IsUpdatingAchievementList` 保护起来。
 
 ---
 
@@ -196,9 +211,16 @@ The Binding of Isaac: Rebirth（appid 250900），641 个成就，间隔 1 秒�
 | --- | --- |
 | 实际耗时 | 约 10 分 40 秒（641 秒 + 每次写入开销） |
 | 结果 | 641 / 641 全部解锁，进度窗口显示「全部完成」 |
-| 顺序 | 严格按全球解锁率从高到低（84.70% → 60.20% → … → 2.60%） |
 | 解锁时间戳 | 逐个拉开、各不相同，落在 1:50~1:59 的区间内 |
 | 失败/重试 | 0 次 |
+| 顺序 | ⚠️ **见下方更正** |
+
+> **更正（v6 发现）**：这次测试跑的是 **v6 之前的版本**，当时存在
+> `ListView.Sorting` 覆盖排序的 bug（见第 3 节踩坑记录 3），
+> 因此**实际解锁顺序是成就名字母序，不是全球解锁率顺序**。
+> 「逐个拉开时间戳」这条结论不受影响（写入逻辑本身没问题），
+> 但**顺序相关的结论作废**。v6 已修复，修复后实测为严格降序
+> （49.70% → 40.10% → 36.30% → 30.30% → 28.40%）。
 
 ### 4.2 「指定历史解锁时间」实测失败（不可行）
 
@@ -326,7 +348,14 @@ Steam 的成就数据是客户端通过 `CMsgClientStoreUserStats2` 这类消息
 
 ## 8. 许可
 
-### 8.1 本项目使用什么许可
+### 8.1 一句话结论
+
+> **本仓库的全部代码（含魔改新增的文件）只适用一种许可证：上游的 zlib License。**
+> 本仓库**没有**自己的许可证，**没有**使用 MIT / GPL / Apache 等其它许可证。
+> 完整原文见 [`LICENSE.txt`](LICENSE.txt)，与上游**逐字节一致**、未作任何修改。
+>
+> README 里唯一出现的 "MIT" 是**第三方 .NET 运行时组件**的许可（见 8.4），
+> 那是那些 DLL 自带的，**与本仓库的代码许可无关**。
 
 上游 gibbed/SteamAchievementManager 采用 **zlib License**，这是一种**宽松许可证（permissive）**，
 不是 GPL 那种传染性许可证：
@@ -337,11 +366,7 @@ Steam 的成就数据是客户端通过 `CMsgClientStoreUserStats2` 这类消息
 | 再分发（含修改版） | ✅ 明示允许（`redistribute it freely`） |
 | 商用 | ✅ 明示允许 |
 | 闭源 / 不公开改动 | ✅ 允许（zlib 无 copyleft、无 share-alike 义务） |
-| 衍生代码必须沿用 zlib | ❌ 不要求 |
-
-**本仓库没有附加自己的许可证。** 仓库内所有代码（含本次新增的文件）统一适用上游的
-zlib License，完整原文见 [`LICENSE.txt`](LICENSE.txt)。这份文件与上游**逐字节一致**
-（SHA256 `E4BFF363695D6FD3CC517CCCF2821D8A0887389C49840F23A758920133A0F35C`），未作任何改动。
+| 衍生代码必须沿用 zlib | ❌ 不要求（但本仓库**主动选择**统一沿用 zlib，不再另行附加许可证） |
 
 ### 8.2 本仓库如何遵守 zlib 的三条限制
 
@@ -358,49 +383,54 @@ zlib 的三条限制是：
 1. **来源未被歪曲**：README 顶部显著位置写明了原版项目、原作者、原版许可，
    并声明本仓库**不是**官方版本、**未获**原作者背书。
 2. **改动已被明确标注**：见下方 8.3 的逐项清单。
-3. **许可证声明未被移除或修改**：`LICENSE.txt` 在仓库根目录及 `SAM.API/`、`SAM.Game/`、
-   `SAM.Picker/` 下共四份，全部与上游逐字节一致；每个 `.cs` 源文件顶部的
-   `Copyright (c) 2024 Rick …` 及 zlib 全文均保持原样（本次新增的文件同样带有该声明）。
+3. **许可证声明未被移除或修改**：`LICENSE.txt` 在仓库根目录及 `work/SAM.API/`、`work/SAM.Game/`、
+   `work/SAM.Picker/` 下共四份，全部与上游逐字节一致（SHA256
+   `E4BFF363695D6FD3CC517CCCF2821D8A0887389C49840F23A758920133A0F35C`）；
+   每个 `.cs` 源文件顶部的 `Copyright (c) 2024 Rick …` 及 zlib 全文均保持原样
+   （本次新增的文件同样带有该声明）。
 
 ### 8.3 相对上游的全部改动
 
-**新增文件（8 个）**
+**新增文件**
 
 | 文件 | 作用 |
 | --- | --- |
-| `SAM.Game/PacingSession.cs` | 节奏解锁核心：排序、随机间隔调度、单步写入与回读校验 |
-| `SAM.Game/PacingSettingsForm.cs` | 节奏解锁配置窗口（含预览与耗时估算） |
-| `SAM.Game/PacingScheduleForm.cs` | 运行进度窗口（进度条 / 倒计时 / 停止） |
-| `SAM.Game/SpreadSchedule.cs` | 长时间铺开：按天排期 + 进度存档 |
-| `SAM.Game/SpreadPlanForm.cs` | 长时间铺开配置窗口（起止日期 / 每日配额 / 时间窗口） |
-| `SAM.Game/GlobalAchievementPercentages.cs` | Steam Web API 回退实现 |
-| `SAM.API/Types/GameAchievementData.cs` | 回调参数结构（name, percent 数组） |
-| `SAM.API/Callbacks/GameAchievementData.cs` | 回调 id 1102 + 原始缓冲解析 |
+| `work/SAM.Game/PacingSession.cs` | 节奏解锁核心：排序、随机间隔调度、单步写入与回读校验 |
+| `work/SAM.Game/PacingSettingsForm.cs` | 节奏解锁配置窗口（含预览与耗时估算） |
+| `work/SAM.Game/PacingScheduleForm.cs` | 运行进度窗口（进度条 / 倒计时 / 停止） |
+| `work/SAM.Game/SpreadSchedule.cs` | 长时间铺开：按天排期 + 进度存档 |
+| `work/SAM.Game/SpreadPlanForm.cs` | 长时间铺开配置窗口（起止日期 / 每日配额 / 时间窗口） |
+| `work/SAM.Game/Localization.cs` | 运行时本地化层：翻译表 + 控件树替换 + 语言持久化 |
+| `work/SAM.Game/LanguagePickerForm.cs` | 启动/切换用的语言选择窗口 |
+| `work/SAM.Game/GlobalAchievementPercentages.cs` | Steam Web API 回退实现 |
+| `work/SAM.API/Types/GameAchievementData.cs` | 回调参数结构（name, percent 数组） |
+| `work/SAM.API/Callbacks/GameAchievementData.cs` | 回调 id 1102 + 原始缓冲解析 |
+| `work/Directory.Build.props` | 构建环境适配（非上游文件） |
 
-另外新增了 `Directory.Build.props`（构建环境适配，非上游文件）。
-
-**修改文件（6 个）**
+**修改文件**
 
 | 文件 | 改动 |
 | --- | --- |
-| `SAM.API/Interfaces/ISteamUserStats013.cs` | 保持原虚表布局，仅加注释说明为何不定义 `SetAchievementAndUnlockTime` |
-| `SAM.API/Wrappers/SteamUserStats013.cs` | 新增 `RequestGlobalAchievementPercentages` / `GetAchievementAchievedPercent` 封装 |
-| `SAM.Game/Manager.cs` | 解锁率获取与显示、全量成就缓存、排序、节奏解锁与铺开模式的调度、回调重入保护 |
-| `SAM.Game/Manager.Designer.cs` | 新增三个工具栏按钮 + 列头点击排序 + 工具栏自动换行 |
-| `SAM.Game/SAM.Game.csproj` | 引用 `System.Runtime.Serialization`；版本号对齐 7.0.41 并标注个人魔改版 |
-| `SAM.Game/Stats/AchievementInfo.cs` | 新增 `GlobalPercent` 字段 |
+| `work/SAM.API/Interfaces/ISteamUserStats013.cs` | 保持原虚表布局，仅加注释说明为何**不**定义 `SetAchievementAndUnlockTime` |
+| `work/SAM.API/Wrappers/SteamUserStats013.cs` | 新增 `RequestGlobalAchievementPercentages` / `GetAchievementAchievedPercent` 封装 |
+| `work/SAM.Game/Manager.cs` | 解锁率获取与显示、全量成就缓存、**关闭控件自动排序**、列头本地化、节奏解锁与铺开模式调度、回调重入保护 |
+| `work/SAM.Game/Manager.Designer.cs` | 新增三个工具栏按钮 + 图标开关 + 语言按钮 + 工具栏自动换行 + 窗口加宽 |
+| `work/SAM.Game/Program.cs` | 启动时确定界面语言（`--lang` / 首次运行询问 / Steam 语言探测） |
+| `work/SAM.Picker/Program.cs`、`GamePicker.cs` | 复用同一张翻译表，选择器界面本地化 |
+| `work/SAM.Game/SAM.Game.csproj`、`SAM.Picker.csproj` | 引用 `System.Runtime.Serialization`、链接共享 `Localization.cs`、版本号对齐 7.0.41 |
+| `work/SAM.Game/Stats/AchievementInfo.cs` | 新增 `GlobalPercent` 字段 |
 
-**上游原样的文件**：其余全部文件与上游 7.0.41 逐字节相同（可用
-`_src/tree/` 中的原始源码自行 diff 验证）。
+**上游原样的文件**：其余全部文件与上游 7.0.41 逐字节相同（可用 `_src/tree/` 中的原始源码自行 diff 验证）。
 
-### 8.4 第三方组件
+### 8.4 第三方组件（这里的 MIT 与本仓库代码无关）
 
-运行时随附的几个 DLL 来自 .NET 平台，均为 MIT 许可；.NET SDK 只用于构建，不随产物分发。
+运行时随附的几个 DLL 来自 .NET 平台，它们**自带 MIT 许可**；.NET SDK 只用于构建，不随产物分发。
 
 | 组件 | 许可 |
 | --- | --- |
-| `System.Resources.Extensions.dll` | MIT |
-| `System.Memory.dll` / `System.Buffers.dll` / `System.Numerics.Vectors.dll` / `System.Runtime.CompilerServices.Unsafe.dll` | MIT |
-| .NET SDK（仅构建期） | MIT |
+| `System.Resources.Extensions.dll` | MIT（微软 .NET 平台组件） |
+| `System.Memory.dll` / `System.Buffers.dll` / `System.Numerics.Vectors.dll` / `System.Runtime.CompilerServices.Unsafe.dll` | MIT（微软 .NET 平台组件） |
+| .NET SDK（仅构建期） | MIT（微软） |
 
+> 也就是说：**本仓库自己的代码是 zlib，附带的微软组件是 MIT**，两者互不影响。
 > 以上仅为技术说明，不构成法律意见。

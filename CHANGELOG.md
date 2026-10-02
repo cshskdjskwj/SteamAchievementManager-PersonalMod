@@ -1,5 +1,33 @@
 # 更新记录
 
+## 仓库清理（2026-10，无版本号变更）
+
+### 🧹 删除
+
+- `_shots2/`（两张调试截图，误提交进仓库了）
+- 本地冗余大文件（原本就未入库）：`_src/dotnet-sdk.zip`（284.6 MB）、`_src/extract/`、
+  `_src/sam-7.0.41.tar.gz`、`_src/build.ps1.bak`
+
+### 🔧 修正
+
+- `.gitignore`：补上 `_shots/`、`_shots2/`（后者之前漏了，导致截图被提交）
+- `build.ps1`：
+  - 加 `-nodeReuse:false`。MSBuild 默认会留下常驻的编译服务器进程，
+    它们一直锁着 `obj/` 里的文件，**导致整个文件夹删不掉**（已实际踩过）
+  - 保存为 **UTF-8 with BOM**。PowerShell 5.1 解析 `.ps1` 默认按 ANSI/GBK 解码，
+    中文注释会被解成乱码并引发语法错误
+- `README.md`：
+  - 第 8 章重写，"许可"部分**开头就讲清**：本仓库只有 zlib 一种许可、没有 MIT；
+    README 里的 "MIT" 仅指附带的微软 .NET 组件（8.4）
+  - 补上 v5/v6 新增文件（`Localization.cs`、`LanguagePickerForm.cs`）与相关改动
+  - **更正第 4.1 节的不实记录**：那次 641 成就测试跑的是 v6 之前的版本，
+    当时受 `ListView.Sorting` bug 影响，实际解锁顺序是**成就名字母序**而非解锁率顺序。
+    原表格写的"严格按全球解锁率从高到低"已作废并标注更正
+  - 新增踩坑记录 3（`ListView.Sorting` 覆盖排序）
+  - 修复一处被控制字符破坏的表格行（`build.ps1` / `run.ps1`）
+
+---
+
 ## v7.0.41-personalmod.6 — 修复「按解锁率排序」无效 + 列头未翻译
 
 ### 🐞 修复：点「解锁率排序」完全没效果（重要）

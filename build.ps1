@@ -15,10 +15,17 @@ if (-not (Test-Path $dotnet)) {
 }
 
 # GenerateResourceUsePreserializedResources: 新版 SDK 编译 .NET Framework 的 .resx 图标资源所必需
+#
+# 下面两个开关都是为了**不让编译进程常驻**：
+#   -nodeReuse:false              → 不留 MSBuild 工作节点
+#   -p:UseSharedCompilation=false → 不留 Roslyn 编译器服务器（VBCSCompiler.dll）
+# 这些常驻进程会一直锁着 obj/ 里的文件，导致**整个文件夹删不掉**（已实际踩过）。
 & $dotnet build (Join-Path $work 'SAM.sln') `
     -c Release `
     -p:Platform=x86 `
     -p:GenerateResourceUsePreserializedResources=true `
+    -nodeReuse:false `
+    -p:UseSharedCompilation=false `
     -v m
 
 if ($LASTEXITCODE -ne 0) {
