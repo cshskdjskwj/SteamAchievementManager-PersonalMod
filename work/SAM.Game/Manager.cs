@@ -41,6 +41,19 @@ namespace SAM.Game
 
         private readonly WebClient _IconDownloader = new();
 
+        /// <summary>
+        /// 成就数超过这个值就不再自动下载图标。
+        /// 图标只存在于内存中（关闭即释放、不占磁盘），但每个图标要一次网络请求，
+        /// 上千个成就会让加载慢好几分钟，所以默认跳过。
+        /// </summary>
+        private const int AutoSkipIconsThreshold = 100;
+
+        private bool _ApplyingIconDefault;
+        private bool _IconDefaultSkipped;
+        private string _IconSkipNote;
+        private long _IconDecisionGameId = -1;
+        private bool _IconPreferenceSetByUser;
+
         private readonly List<Stats.AchievementInfo> _IconQueue = new();
         private readonly List<Stats.StatDefinition> _StatDefinitions = new();
 
@@ -462,11 +475,15 @@ namespace SAM.Game
             this._GameStatusLabel.Text = $"Retrieved {this._AchievementListView.Items.Count} achievements and {this._StatisticsDataGridView.Rows.Count} statistics.";
             this.EnableInput();
 
+            // 魔改：成就数过多时默认不下载图标（每次打开都要重新下载，很耗时）
+            this.ApplyIconLoadDefault();
+
             // 魔改：成就列表就绪后再去取全球解锁率，避免发得太早
             this.FetchGlobalPercentages();
 
             // 魔改：如果上次有没跑完的「长时间铺开」计划，自动接着跑
             this.ResumeSpreadIfAny();
+
         }
 
         private void RefreshStats()
@@ -480,6 +497,13 @@ namespace SAM.Game
             this._AchievementListView.Items.Clear();
             this._AllAchievements.Clear();
             this._StatisticsDataGridView.Rows.Clear();
+
+            // 关掉图标下载后，把还没下完的队列清空，避免继续发网络请求
+            if (this._LoadIconsCheckBox.Checked == false)
+            {
+                this._IconQueue.Clear();
+                this._DownloadStatusLabel.Visible = false;
+            }
 
             var steamId = this._SteamClient.SteamUser.GetSteamId();
 
@@ -705,6 +729,13 @@ namespace SAM.Game
             }
             else
             {
+                // 用户关掉了「下载图标」：不排队，直接用占位图
+                if (this._LoadIconsCheckBox.Checked == false)
+                {
+                    info.ImageIndex = 0;
+                    return;
+                }
+
                 this._IconQueue.Add(info);
 
                 if (startDownload == true)
@@ -712,6 +743,69 @@ namespace SAM.Game
                     this.DownloadNextIcon();
                 }
             }
+        }
+
+        /// <summary>
+        /// 成就数超过阈值时，默认不下载图标并告知用户。
+        /// 每个游戏只自动决定一次；用户一旦手动勾选，就完全尊重用户的选择。
+        /// </summary>
+        private void ApplyIconLoadDefault()
+        {
+            if (this._IconDecisionGameId == this._GameId)
+            {
+                return;
+            }
+
+            this._IconDecisionGameId = this._GameId;
+
+            if (this._IconPreferenceSetByUser == true)
+            {
+                return;
+            }
+
+            int count = this._AchievementDefinitions.Count;
+            if (count <= AutoSkipIconsThreshold)
+            {
+                return;
+            }
+
+
+            this._ApplyingIconDefault = true;
+            try
+            {
+                this._LoadIconsCheckBox.Checked = false;
+            }
+            finally
+            {
+                this._ApplyingIconDefault = false;
+            }
+
+            // 关键：此时图标已经全部入队了，必须把队列清掉，
+            // 否则后台仍会把这几百上千个请求一个个发完。
+            this._IconQueue.Clear();
+            this._DownloadStatusLabel.Visible = false;
+
+            this._IconDefaultSkipped = true;
+            this._IconSkipNote = string.Format(
+                CultureInfo.CurrentCulture,
+                "这个游戏有 {0} 个成就，已默认跳过图标下载（图标只存在于内存、关闭即释放，不占磁盘空间；" +
+                "但每个图标需要一次网络请求，全部下载会明显变慢）。需要图标请勾选工具栏的「下载图标」再点 Refresh。",
+                count);
+
+            this._GameStatusLabel.Text = this._IconSkipNote;
+        }
+
+        private void OnLoadIconsChanged(object sender, EventArgs e)
+        {
+            // 程序自己改的勾选状态不算用户意愿
+            if (this._ApplyingIconDefault == false)
+            {
+                this._IconPreferenceSetByUser = true;
+            }
+
+            this._GameStatusLabel.Text = this._LoadIconsCheckBox.Checked == true
+                ? "图标下载：开（点 Refresh 或重开游戏后生效）"
+                : "图标下载：关（点 Refresh 或重开游戏后生效）";
         }
 
         private int StoreAchievements()
@@ -958,11 +1052,13 @@ namespace SAM.Game
 
         private void OnResetAllStats(object sender, EventArgs e)
         {
+            // 注意：这三个确认框都必须用 "!= Yes" 判断。
+            // 用 "== No" 的话，点 X 关闭对话框返回的是 Cancel，会被当成"没选否"而继续执行重置。
             if (MessageBox.Show(
                 "Are you absolutely sure you want to reset stats?",
                 "Warning",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning) == DialogResult.No)
+                MessageBoxIcon.Warning) != DialogResult.Yes)
             {
                 return;
             }
@@ -977,7 +1073,7 @@ namespace SAM.Game
                 "Really really sure?",
                 "Warning",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Error) == DialogResult.No)
+                MessageBoxIcon.Error) != DialogResult.Yes)
             {
                 return;
             }
@@ -1219,7 +1315,11 @@ namespace SAM.Game
             }
 
             this.GetAchievements();
-            this._GameStatusLabel.Text = $"已更新 {matched} 个成就的全球解锁率。";
+            // 图标跳过说明放在这里，否则会被这条异步返回的状态文本覆盖掉
+            this._GameStatusLabel.Text = $"已更新 {matched} 个成就的全球解锁率。" +
+                (this._IconDefaultSkipped == true && string.IsNullOrEmpty(this._IconSkipNote) == false
+                    ? "  " + this._IconSkipNote
+                    : "");
         }
 
         #endregion
@@ -1276,6 +1376,21 @@ namespace SAM.Game
             var all = this._AllAchievements.Values.ToList();
             var initial = this.CreateDefaultPacingSettings();
 
+            // 先判断"还有没有可解锁的成就"。
+            // 否则全成就解锁时会误报成"缺少全球解锁率数据"，把人引到错误的方向。
+            int lockedCount = all.Count(a => (a.Permission & 3) == 0 && a.IsAchieved == false);
+            if (lockedCount == 0)
+            {
+                MessageBox.Show(
+                    this,
+                    "这个游戏已经没有未解锁的成就了。\n\n" +
+                    "如果你想重新刷一遍，可以先用工具栏的 Reset 重置成就，或者手动取消勾选某些成就。",
+                    "没有可解锁的成就",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
             if (PacingSession.TryValidateRateData(all, initial, out var total, out var withRate, out var missingRate) == false)
             {
                 var answer = MessageBox.Show(
@@ -1287,7 +1402,8 @@ namespace SAM.Game
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
 
-                if (answer == DialogResult.No)
+                // 只有明确点「是」才继续；点「否」或直接关掉这个提示框都视为取消
+                if (answer != DialogResult.Yes)
                 {
                     return;
                 }
@@ -1297,8 +1413,8 @@ namespace SAM.Game
 
             using (var form = new PacingSettingsForm(initial, all))
             {
-                form.ShowDialog(this);
-                if (form.Settings == null)
+                // 必须看返回值：点 X 或「取消」时是 Cancel，不能当成确认
+                if (form.ShowDialog(this) != DialogResult.OK)
                 {
                     return;
                 }
@@ -1536,7 +1652,12 @@ namespace SAM.Game
 
             using (var form = new SpreadPlanForm(initial, pending, existingText))
             {
-                form.ShowDialog(this);
+                // 必须看返回值：点 X 或「取消」时是 Cancel，
+                // 否则不但会开跑，还会用对话框里的当前值覆盖掉已保存的计划配置
+                if (form.ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
 
                 bool rebuild = progress == null || form.ResetExistingPlan == true;
                 if (rebuild == true)

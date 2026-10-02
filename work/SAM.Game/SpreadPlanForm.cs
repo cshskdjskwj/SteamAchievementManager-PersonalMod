@@ -74,6 +74,8 @@ namespace SAM.Game
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question);
 
+                // 只有明确点「否」才重排新计划；
+                // 点 X 关闭这个提示返回 Cancel，应当按"继续用已有进度"处理
                 if (answer == DialogResult.No)
                 {
                     this.ResetExistingPlan = true;
@@ -262,6 +264,8 @@ namespace SAM.Game
                 }
 
                 this.Config = this.ReadConfig();
+                // 显式声明"确认"，否则 ShowDialog 的返回值会是 Cancel
+                this.DialogResult = DialogResult.OK;
                 this.Close();
             };
 

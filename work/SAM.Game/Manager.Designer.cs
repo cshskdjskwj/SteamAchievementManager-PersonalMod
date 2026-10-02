@@ -1,4 +1,4 @@
-﻿namespace SAM.Game
+namespace SAM.Game
 {
     partial class Manager
     {
@@ -32,6 +32,7 @@
             System.Windows.Forms.ToolStripSeparator _ToolStripSeparator1;
             System.Windows.Forms.ToolStripSeparator _ToolStripSeparator2;
             System.Windows.Forms.ToolStripSeparator _ToolStripSeparator3;
+            System.Windows.Forms.ToolStripSeparator _ToolStripSeparator4;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Manager));
             this._MainToolStrip = new System.Windows.Forms.ToolStrip();
             this._StoreButton = new System.Windows.Forms.ToolStripButton();
@@ -40,6 +41,7 @@
             this._SortByRateButton = new System.Windows.Forms.ToolStripButton();
             this._UnlockByRateButton = new System.Windows.Forms.ToolStripButton();
             this._SpreadButton = new System.Windows.Forms.ToolStripButton();
+            this._LoadIconsCheckBox = new System.Windows.Forms.ToolStripButton();
             this._AchievementImageList = new System.Windows.Forms.ImageList(this.components);
             this._MainStatusStrip = new System.Windows.Forms.StatusStrip();
             this._CountryStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
@@ -67,6 +69,7 @@
             _ToolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             _ToolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             _ToolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            _ToolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this._MainToolStrip.SuspendLayout();
             this._MainStatusStrip.SuspendLayout();
             this._MainTabControl.SuspendLayout();
@@ -260,7 +263,9 @@
             _ToolStripSeparator3,
             this._SortByRateButton,
             this._UnlockByRateButton,
-            this._SpreadButton});
+            this._SpreadButton,
+            _ToolStripSeparator4,
+            this._LoadIconsCheckBox});
             this._AchievementsToolStrip.Location = new System.Drawing.Point(3, 3);
             this._AchievementsToolStrip.Name = "_AchievementsToolStrip";
             // 魔改：默认窗口宽度下工具栏会被挤爆，改成自动换行，保证新按钮一定看得见
@@ -343,6 +348,17 @@
             this._MatchingStringTextBox.Size = new System.Drawing.Size(100, 25);
             this._MatchingStringTextBox.ToolTipText = "Type at least 3 characters that must appear in the name or description";
             this._MatchingStringTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OnFilterUpdate);
+            // 
+            // _LoadIconsCheckBox
+            // 
+            this._LoadIconsCheckBox.CheckOnClick = true;
+            this._LoadIconsCheckBox.Checked = true;
+            this._LoadIconsCheckBox.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this._LoadIconsCheckBox.Name = "_LoadIconsCheckBox";
+            this._LoadIconsCheckBox.Size = new System.Drawing.Size(90, 22);
+            this._LoadIconsCheckBox.Text = "下载图标";
+            this._LoadIconsCheckBox.ToolTipText = "是否从 Steam CDN 下载成就图标。图标只存在于内存中，关闭程序即释放，不占用任何磁盘空间；但每个图标需要一次网络请求，成就很多时（例如上千个）会明显拖慢加载。改动后需要点 Refresh 或重新打开游戏生效。";
+            this._LoadIconsCheckBox.CheckedChanged += new System.EventHandler(this.OnLoadIconsChanged);
             // 
             // _SortByRateButton
             // 
@@ -477,5 +493,6 @@
         private System.Windows.Forms.ToolStripButton _SortByRateButton;
         private System.Windows.Forms.ToolStripButton _UnlockByRateButton;
         private System.Windows.Forms.ToolStripButton _SpreadButton;
+        private System.Windows.Forms.ToolStripButton _LoadIconsCheckBox;
     }
 }

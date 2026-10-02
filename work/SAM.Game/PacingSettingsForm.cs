@@ -259,6 +259,9 @@ namespace SAM.Game
                 }
 
                 this.Settings = this.ReadSettings();
+                // 显式声明"确认"，否则 ShowDialog 的返回值会是 Cancel，
+                // 调用方会把它当成"用户取消了"
+                this.DialogResult = DialogResult.OK;
                 this.Close();
             };
 
@@ -346,12 +349,13 @@ namespace SAM.Game
 
             if (this._MaximumIntervalBox.Value + this._MinimumIntervalBox.Value == 0)
             {
+                // 必须用 "!= Yes"：点 X 关闭返回 Cancel，用 "== No" 会当成"确认继续"
                 if (MessageBox.Show(
                     this,
                     "间隔设置为 0 秒，所有成就会在瞬间解锁（完全不像真人在玩）。\n\n确定要继续吗？",
                     "确认",
                     MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning) == DialogResult.No)
+                    MessageBoxIcon.Warning) != DialogResult.Yes)
                 {
                     return false;
                 }

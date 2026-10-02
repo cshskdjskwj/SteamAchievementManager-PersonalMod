@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Company>Gibbed</Company>
     <Authors>Gibbed</Authors>
@@ -6,7 +6,7 @@
     <Copyright>Copyright © Gibbed 2019</Copyright>
   </PropertyGroup>
   <PropertyGroup>
-    <Version>7.0.41-personalmod.1</Version>
+    <Version>7.0.41-personalmod.4</Version>
     <AssemblyVersion>7.0.0.0</AssemblyVersion>
     <FileVersion>7.0.41.0</FileVersion>
   </PropertyGroup>
