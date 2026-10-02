@@ -446,24 +446,21 @@ namespace SAM.Game
             int missing = this._Achievements.Count(a =>
                 a.GlobalPercent.HasValue == false && (a.Permission & 3) == 0);
 
-            string message = string.Format(
-                CultureInfo.CurrentCulture,
+            string message = SAM.I18n.Localization.T(
                 "将解锁 {0} 个成就，预计总耗时 {1}（最后一个成就之后不再等待）。",
                 steps.Count,
                 FormatDuration(total));
 
             if (missing > 0 && settings.Order != PacingOrder.Random)
             {
-                message += string.Format(
-                    CultureInfo.CurrentCulture,
+                message += SAM.I18n.Localization.T(
                     " 其中 {0} 个没有全球解锁率数据，会排在最后。",
                     unknownPercent);
             }
 
             if (protectedCount > 0)
             {
-                message += string.Format(
-                    CultureInfo.CurrentCulture,
+                message += SAM.I18n.Localization.T(
                     " 另有 {0} 个受保护成就会被跳过。",
                     protectedCount);
             }

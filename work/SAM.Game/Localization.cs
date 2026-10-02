@@ -254,6 +254,10 @@ namespace SAM.I18n
                 { "确定 / OK", new[] { "确定", "確定", "OK" } },
                 { "取消 / Cancel", new[] { "取消", "取消", "Cancel" } },
                 { "界面语言 / Language", new[] { "界面语言", "介面語言", "Interface Language" } },
+                { "将解锁 {0} 个成就，预计总耗时 {1}（最后一个成就之后不再等待）。", new[] { "将解锁 {0} 个成就，预计总耗时 {1}（最后一个成就之后不再等待）。", "將解鎖 {0} 個成就，預計總耗時 {1}（最後一個成就之後不再等待）。", "Will unlock {0} achievements, estimated total {1} (no waiting after the last one)." } },
+                { " 其中 {0} 个没有全球解锁率数据，会排在最后。", new[] { " 其中 {0} 个没有全球解锁率数据，会排在最后。", " 其中 {0} 個沒有全球解鎖率資料，會排在最後。", " {0} of them have no global rate data and will be placed last." } },
+                { " 另有 {0} 个受保护成就会被跳过。", new[] { " 另有 {0} 个受保护成就会被跳过。", " 另有 {0} 個受保護成就會被跳過。", " {0} protected achievements will be skipped." } },
+                { "按当前条件没有可解锁的成就，请放宽解锁率区间，或先刷新数据。", new[] { "按当前条件没有可解锁的成就，请放宽解锁率区间，或先刷新数据。", "依目前條件沒有可解鎖的成就，請放寬解鎖率區間，或先重新整理資料。", "No achievements match the current settings. Widen the rate range or refresh first." } },
                 { "切换界面语言（会记住选择，下次直接使用）", new[] { "切换界面语言（会记住选择，下次直接使用）", "切換介面語言（會記住選擇，下次直接使用）", "Switch the interface language (the choice is remembered)" } },
                 { "是否从 Steam CDN 下载成就图标。图标只存在于内存中，关闭程序即释放，不占用任何磁盘空间；但每个图标需要一次网络请求，成就很多时（例如上千个）会明显拖慢加载。改动后需要点 Refresh 或重新打开游戏生效。", new[] { "是否从 Steam CDN 下载成就图标。图标只存在于内存中，关闭程序即释放，不占用任何磁盘空间；但每个图标需要一次网络请求，成就很多时（例如上千个）会明显拖慢加载。改动后需要点「刷新」或重新打开游戏生效。", "是否從 Steam CDN 下載成就圖示。圖示只存在於記憶體中，關閉程式即釋放，不佔用任何磁碟空間；但每個圖示需要一次網路請求，成就很多時（例如上千個）會明顯拖慢載入。改動後需要點「重新整理」或重新開啟遊戲生效。", "Whether to download achievement icons from the Steam CDN. Icons live in memory only and are dropped when the app exits, so they never touch your disk; but each icon costs one network request, which is slow for games with many achievements. Takes effect after Refresh or reopening the game." } },
                 { "按 Steam 全球解锁率排序成就列表（再点一次反向排序）。", new[] { "按 Steam 全球解锁率排序成就列表（再点一次反向排序）。", "依 Steam 全球解鎖率排序成就清單（再點一次反向排序）。", "Sort the achievement list by Steam global unlock rate (click again to reverse)." } },
@@ -465,6 +469,26 @@ namespace SAM.I18n
                 }
             }
 
+            // 下拉框的选项（例如"解锁顺序"里的三条）
+            var comboBox = control as ComboBox;
+            if (comboBox != null)
+            {
+                for (var i = 0; i < comboBox.Items.Count; i++)
+                {
+                    var itemText = comboBox.Items[i] as string;
+                    if (string.IsNullOrEmpty(itemText) == true)
+                    {
+                        continue;   // 语言名等对象项保持原样
+                    }
+
+                    var translated = T(itemText);
+                    if (translated != itemText)
+                    {
+                        comboBox.Items[i] = translated;
+                    }
+                }
+            }
+
             foreach (Control child in control.Controls)
             {
                 ApplyToControl(child);
@@ -581,6 +605,25 @@ namespace SAM.I18n
                     if (key != column.Text)
                     {
                         column.Text = key;
+                    }
+                }
+            }
+
+            var comboBox = control as ComboBox;
+            if (comboBox != null)
+            {
+                for (var i = 0; i < comboBox.Items.Count; i++)
+                {
+                    var itemText = comboBox.Items[i] as string;
+                    if (string.IsNullOrEmpty(itemText) == true)
+                    {
+                        continue;
+                    }
+
+                    var key = ToKey(itemText);
+                    if (key != itemText)
+                    {
+                        comboBox.Items[i] = key;
                     }
                 }
             }
