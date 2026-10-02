@@ -135,16 +135,30 @@
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-产物落在 `work\upload\`。编译命令等价于：
+产物落在 `work\upload\`，**并会自动部署到仓库根目录**（也就是你双击 `SAM.Picker.exe` 的位置），
+最后打印三份产物的版本号。
+
+> 为什么要自动部署：早期版本只更新 `upload\`，根目录还留着旧 exe，
+> 结果"改了代码却跑的还是旧界面"。现在一条命令搞定，不会再踩。
+
+编译命令等价于：
 
 ```powershell
 _src\dotnet\dotnet.exe build work\SAM.sln -c Release -p:Platform=x86 `
-    -p:GenerateResourceUsePreserializedResources=true
+    -p:GenerateResourceUsePreserializedResources=true `
+    -nodeReuse:false -p:UseSharedCompilation=false
 ```
 
 > `GenerateResourceUsePreserializedResources=true` 是必须的：
 > 原工程是 VS2019 时代的 SDK 工程，`.resx` 里有 `System.Drawing.Bitmap` 图标，
 > 新版 SDK 需要这个开关 + `System.Resources.Extensions` 才能编译。
+
+> 后两个开关是为了**不让编译进程常驻**：MSBuild 默认会留工作节点，
+> Roslyn 会留编译器服务器（`VBCSCompiler.dll`），它们一直锁着 `obj\` 里的文件，
+> 会导致**整个文件夹删不掉**。
+>
+> 另外 `build.ps1` / `run.ps1` 保存为 **UTF-8 with BOM**，请勿去掉 BOM：
+> PowerShell 5.1 解析 `.ps1` 默认按 ANSI/GBK 解码，中文注释会被解成乱码并引发语法错误。
 
 ### 3.3 本次改动清单
 
