@@ -57,3 +57,6 @@ _src/release/
 _src/gh-token.txt
 _src/poll.ps1
 _src/device-code.json
+
+# ---- 本程序运行时生成的用户配置 ----
+sam-mod-config.txt

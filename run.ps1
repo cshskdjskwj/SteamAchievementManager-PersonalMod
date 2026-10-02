@@ -1,4 +1,4 @@
-# 启动魔改版 SAM 并针对指定 appId 打开成就管理器（调试用）
+﻿# 启动魔改版 SAM 并针对指定 appId 打开成就管理器（调试用）
 # 用法: powershell -File run.ps1 -AppId 250900
 param(
     [long]$AppId = 250900,
