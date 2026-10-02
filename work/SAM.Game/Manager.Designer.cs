@@ -42,6 +42,7 @@ namespace SAM.Game
             this._UnlockByRateButton = new System.Windows.Forms.ToolStripButton();
             this._SpreadButton = new System.Windows.Forms.ToolStripButton();
             this._LoadIconsCheckBox = new System.Windows.Forms.ToolStripButton();
+            this._LanguageButton = new System.Windows.Forms.ToolStripButton();
             this._AchievementImageList = new System.Windows.Forms.ImageList(this.components);
             this._MainStatusStrip = new System.Windows.Forms.StatusStrip();
             this._CountryStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
@@ -190,7 +191,7 @@ namespace SAM.Game
             this._MainTabControl.Location = new System.Drawing.Point(8, 33);
             this._MainTabControl.Name = "_MainTabControl";
             this._MainTabControl.SelectedIndex = 0;
-            this._MainTabControl.Size = new System.Drawing.Size(696, 334);
+            this._MainTabControl.Size = new System.Drawing.Size(884, 372);
             this._MainTabControl.TabIndex = 5;
             // 
             // _AchievementsTabPage
@@ -200,7 +201,7 @@ namespace SAM.Game
             this._AchievementsTabPage.Location = new System.Drawing.Point(4, 22);
             this._AchievementsTabPage.Name = "_AchievementsTabPage";
             this._AchievementsTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this._AchievementsTabPage.Size = new System.Drawing.Size(688, 308);
+            this._AchievementsTabPage.Size = new System.Drawing.Size(876, 346);
             this._AchievementsTabPage.TabIndex = 0;
             this._AchievementsTabPage.Text = "Achievements";
             this._AchievementsTabPage.UseVisualStyleBackColor = true;
@@ -223,7 +224,7 @@ namespace SAM.Game
             this._AchievementListView.LargeImageList = this._AchievementImageList;
             this._AchievementListView.Location = new System.Drawing.Point(3, 28);
             this._AchievementListView.Name = "_AchievementListView";
-            this._AchievementListView.Size = new System.Drawing.Size(682, 277);
+            this._AchievementListView.Size = new System.Drawing.Size(870, 315);
             this._AchievementListView.SmallImageList = this._AchievementImageList;
             this._AchievementListView.Sorting = System.Windows.Forms.SortOrder.Ascending;
             this._AchievementListView.TabIndex = 4;
@@ -265,13 +266,14 @@ namespace SAM.Game
             this._UnlockByRateButton,
             this._SpreadButton,
             _ToolStripSeparator4,
-            this._LoadIconsCheckBox});
+            this._LoadIconsCheckBox,
+            this._LanguageButton});
             this._AchievementsToolStrip.Location = new System.Drawing.Point(3, 3);
             this._AchievementsToolStrip.Name = "_AchievementsToolStrip";
             // 魔改：默认窗口宽度下工具栏会被挤爆，改成自动换行，保证新按钮一定看得见
             this._AchievementsToolStrip.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
             this._AchievementsToolStrip.AutoSize = true;
-            this._AchievementsToolStrip.Size = new System.Drawing.Size(682, 25);
+            this._AchievementsToolStrip.Size = new System.Drawing.Size(870, 25);
             this._AchievementsToolStrip.TabIndex = 5;
             // 
             // _LockAllButton
@@ -360,6 +362,15 @@ namespace SAM.Game
             this._LoadIconsCheckBox.ToolTipText = "是否从 Steam CDN 下载成就图标。图标只存在于内存中，关闭程序即释放，不占用任何磁盘空间；但每个图标需要一次网络请求，成就很多时（例如上千个）会明显拖慢加载。改动后需要点 Refresh 或重新打开游戏生效。";
             this._LoadIconsCheckBox.CheckedChanged += new System.EventHandler(this.OnLoadIconsChanged);
             // 
+            // _LanguageButton
+            // 
+            this._LanguageButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this._LanguageButton.Name = "_LanguageButton";
+            this._LanguageButton.Size = new System.Drawing.Size(60, 22);
+            this._LanguageButton.Text = "语言";
+            this._LanguageButton.ToolTipText = "切换界面语言（会记住选择，下次直接使用）";
+            this._LanguageButton.Click += new System.EventHandler(this.OnChangeLanguage);
+            // 
             // _SortByRateButton
             // 
             this._SortByRateButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
@@ -397,7 +408,7 @@ namespace SAM.Game
             this._StatisticsTabPage.Location = new System.Drawing.Point(4, 22);
             this._StatisticsTabPage.Name = "_StatisticsTabPage";
             this._StatisticsTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this._StatisticsTabPage.Size = new System.Drawing.Size(688, 308);
+            this._StatisticsTabPage.Size = new System.Drawing.Size(876, 346);
             this._StatisticsTabPage.TabIndex = 1;
             this._StatisticsTabPage.Text = "Statistics";
             this._StatisticsTabPage.UseVisualStyleBackColor = true;
@@ -435,7 +446,7 @@ namespace SAM.Game
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(712, 392);
+            this.ClientSize = new System.Drawing.Size(900, 430);
             this.Controls.Add(this._MainToolStrip);
             this.Controls.Add(this._MainTabControl);
             this.Controls.Add(this._MainStatusStrip);
@@ -494,5 +505,6 @@ namespace SAM.Game
         private System.Windows.Forms.ToolStripButton _UnlockByRateButton;
         private System.Windows.Forms.ToolStripButton _SpreadButton;
         private System.Windows.Forms.ToolStripButton _LoadIconsCheckBox;
+        private System.Windows.Forms.ToolStripButton _LanguageButton;
     }
 }

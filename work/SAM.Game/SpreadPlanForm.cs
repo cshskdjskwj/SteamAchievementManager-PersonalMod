@@ -27,6 +27,8 @@ using System.Linq;
 using System.Windows.Forms;
 using SAM.Game.Stats;
 
+using SAM.I18n;
+
 namespace SAM.Game
 {
     /// <summary>
@@ -63,6 +65,7 @@ namespace SAM.Game
             this.Config = initial ?? new SpreadConfig();
 
             this.BuildUi();
+            Localization.ApplyTo(this);
             this.LoadConfig(this.Config);
 
             if (string.IsNullOrEmpty(existingProgressText) == false)

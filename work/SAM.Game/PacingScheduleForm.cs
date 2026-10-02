@@ -25,6 +25,8 @@ using System.Drawing;
 using System.Globalization;
 using System.Windows.Forms;
 
+using SAM.I18n;
+
 namespace SAM.Game
 {
     /// <summary>
@@ -121,6 +123,9 @@ namespace SAM.Game
             });
 
             this.FormClosing += this.OnFormClosing;
+
+            // 魔改：按当前语言替换界面文本
+            Localization.ApplyTo(this);
         }
 
         private void OnStopButtonClick(object sender, EventArgs e)

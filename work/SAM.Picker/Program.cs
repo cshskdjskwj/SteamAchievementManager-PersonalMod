@@ -1,4 +1,4 @@
-﻿/* Copyright (c) 2024 Rick (rick 'at' gibbed 'dot' us)
+/* Copyright (c) 2024 Rick (rick 'at' gibbed 'dot' us)
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -23,6 +23,8 @@
 using System;
 using System.Windows.Forms;
 
+using SAM.I18n;
+
 namespace SAM.Picker
 {
     internal static class Program
@@ -30,11 +32,22 @@ namespace SAM.Picker
         [STAThread]
         private static void Main()
         {
+            // 魔改：这两个设置必须在创建任何控件之前调用
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            // 魔改：界面语言由 SAM.Game 首次运行时选择并保存，这里读取即可
+            var saved = Localization.LoadSavedLanguage();
+            if (string.IsNullOrEmpty(saved) == false)
+            {
+                Localization.SetLanguage(saved);
+            }
+
             if (API.Steam.GetInstallPath() == Application.StartupPath)
             {
                 MessageBox.Show(
-                    "This tool declines to being run from the Steam directory.",
-                    "Error",
+                    Localization.T("This tool declines to being run from the Steam directory."),
+                    Localization.T("Error"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
                 return;
@@ -51,17 +64,17 @@ namespace SAM.Picker
                     if (string.IsNullOrEmpty(e.Message) == false)
                     {
                         MessageBox.Show(
-                            "Steam is not running. Please start Steam then run this tool again.\n\n" +
+                            Localization.T("Steam is not running. Please start Steam then run this tool again.\n\n") +
                             "(" + e.Message + ")",
-                            "Error",
+                            Localization.T("Error"),
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
                     }
                     else
                     {
                         MessageBox.Show(
-                            "Steam is not running. Please start Steam then run this tool again.",
-                            "Error",
+                            Localization.T("Steam is not running. Please start Steam then run this tool again."),
+                            Localization.T("Error"),
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
                     }
@@ -70,15 +83,13 @@ namespace SAM.Picker
                 catch (DllNotFoundException)
                 {
                     MessageBox.Show(
-                        "You've caused an exceptional error!",
-                        "Error",
+                        Localization.T("You've caused an exceptional error!"),
+                        Localization.T("Error"),
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                     return;
                 }
 
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new GamePicker(client));
             }
         }

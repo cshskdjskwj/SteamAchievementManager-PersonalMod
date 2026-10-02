@@ -1,4 +1,4 @@
-﻿/* Copyright (c) 2024 Rick (rick 'at' gibbed 'dot' us)
+/* Copyright (c) 2024 Rick (rick 'at' gibbed 'dot' us)
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,6 +24,8 @@ using System;
 using System.Diagnostics;
 using System.Windows.Forms;
 
+using SAM.I18n;
+
 namespace SAM.Game
 {
     internal static class Program
@@ -33,7 +35,20 @@ namespace SAM.Game
         {
             long appId;
 
-            if (args.Length == 0)
+            // 魔改：这两个设置必须在**创建任何控件之前**调用，
+            // 否则会抛 InvalidOperationException（语言选择窗口本身也是控件）。
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            // 魔改：先确定界面语言
+            //   --lang <code>   直接指定（zh-Hans / en / zh-Hant）并记住，然后退出
+            //   没有 --lang 且从未选择过语言时，弹一次语言选择窗口
+            if (TryHandleLanguageArgument(args) == true)
+            {
+                return;
+            }
+
+            if (args.Length == 0 || args[0].StartsWith("--", StringComparison.Ordinal) == true)
             {
                 Process.Start("SAM.Picker.exe");
                 return;
@@ -42,8 +57,8 @@ namespace SAM.Game
             if (long.TryParse(args[0], out appId) == false)
             {
                 MessageBox.Show(
-                    "Could not parse application ID from command line argument.",
-                    "Error",
+                    Localization.T("Could not parse application ID from command line argument."),
+                    Localization.T("Error"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
                 return;
@@ -52,8 +67,8 @@ namespace SAM.Game
             if (API.Steam.GetInstallPath() == Application.StartupPath)
             {
                 MessageBox.Show(
-                    "This tool declines to being run from the Steam directory.",
-                    "Error",
+                    Localization.T("This tool declines to being run from the Steam directory."),
+                    Localization.T("Error"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
                 return;
@@ -70,28 +85,27 @@ namespace SAM.Game
                     if (e.Failure == API.ClientInitializeFailure.ConnectToGlobalUser)
                     {
                         MessageBox.Show(
-                            "Steam is not running. Please start Steam then run this tool again.\n\n" +
-                            "If you have the game through Family Share, the game may be locked due to\n" +
-                            "the Family Share account actively playing a game.\n\n" +
+                            Localization.T("Steam is not running. Please start Steam then run this tool again.\n\n") +
+                            Localization.T("If you have the game through Family Share, the game may be locked due to\nthe Family Share account actively playing a game.\n\n") +
                             "(" + e.Message + ")",
-                            "Error",
+                            Localization.T("Error"),
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
                     }
                     else if (string.IsNullOrEmpty(e.Message) == false)
                     {
                         MessageBox.Show(
-                            "Steam is not running. Please start Steam then run this tool again.\n\n" +
+                            Localization.T("Steam is not running. Please start Steam then run this tool again.\n\n") +
                             "(" + e.Message + ")",
-                            "Error",
+                            Localization.T("Error"),
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
                     }
                     else
                     {
                         MessageBox.Show(
-                            "Steam is not running. Please start Steam then run this tool again.",
-                            "Error",
+                            Localization.T("Steam is not running. Please start Steam then run this tool again."),
+                            Localization.T("Error"),
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
                     }
@@ -100,17 +114,71 @@ namespace SAM.Game
                 catch (DllNotFoundException)
                 {
                     MessageBox.Show(
-                        "You've caused an exceptional error!",
-                        "Error",
+                        Localization.T("You've caused an exceptional error!"),
+                        Localization.T("Error"),
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                     return;
                 }
 
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new Manager(appId, client));
             }
+        }
+
+        /// <summary>
+        /// 处理 --lang 参数；没有参数且从未保存过语言时，弹一次语言选择窗口。
+        /// 返回 true 表示命令行已经把语言处理完了，调用方应当直接退出。
+        /// </summary>
+        private static bool TryHandleLanguageArgument(string[] args)
+        {
+            for (var i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], "--lang", StringComparison.OrdinalIgnoreCase) == false)
+                {
+                    continue;
+                }
+
+                var code = i + 1 < args.Length ? args[i + 1] : null;
+                if (string.IsNullOrEmpty(code) == true)
+                {
+                    // 没给语言代码，就弹选择窗口
+                    var picked = LanguagePickerForm.Ask(true);
+                    if (string.IsNullOrEmpty(picked) == true)
+                    {
+                        return true;
+                    }
+
+                    Localization.SetLanguage(picked);
+                    Localization.SaveLanguage(Localization.Current);
+                    return true;
+                }
+
+                Localization.SetLanguage(code);
+                Localization.SaveLanguage(Localization.Current);
+                return true;
+            }
+
+            var saved = Localization.LoadSavedLanguage();
+            if (string.IsNullOrEmpty(saved) == true)
+            {
+                // 首次运行：先自动探测（Steam 客户端语言 → 系统语言），预选好再让用户确认
+                var detected = Localization.DetectLanguage();
+                var from = Localization.DescribeDetection();
+                Localization.SetLanguage(detected);
+
+                var picked = LanguagePickerForm.Ask(false, detected, from);
+                if (string.IsNullOrEmpty(picked) == false)
+                {
+                    Localization.SetLanguage(picked);
+                    Localization.SaveLanguage(Localization.Current);
+                }
+            }
+            else
+            {
+                Localization.SetLanguage(saved);
+            }
+
+            return false;
         }
     }
 }

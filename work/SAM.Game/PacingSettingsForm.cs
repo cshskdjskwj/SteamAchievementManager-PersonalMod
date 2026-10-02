@@ -28,6 +28,8 @@ using System.Linq;
 using System.Windows.Forms;
 using SAM.Game.Stats;
 
+using SAM.I18n;
+
 namespace SAM.Game
 {
     /// <summary>
@@ -58,6 +60,7 @@ namespace SAM.Game
             this.Settings = initial ?? new PacingSettings();
 
             this.BuildUi();
+            Localization.ApplyTo(this);
             this.LoadSettings(this.Settings);
             this.UpdatePreview();
         }

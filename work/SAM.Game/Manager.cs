@@ -30,7 +30,12 @@ using System.Linq;
 using System.Net;
 using System.Windows.Forms;
 using static SAM.Game.InvariantShorthand;
+
+// 魔改：T(...) 用于翻译用户可见的文本；与上面的 _(...) 不冲突
+using static SAM.I18n.Localization;
 using APITypes = SAM.API.Types;
+
+using SAM.I18n;
 
 namespace SAM.Game
 {
@@ -92,6 +97,9 @@ namespace SAM.Game
         public Manager(long gameId, API.Client client)
         {
             this.InitializeComponent();
+
+            // 魔改：按当前语言替换界面上的既有文本（含工具栏、列头、标签页）
+            Localization.ApplyTo(this);
 
             this._MainTabControl.SelectedTab = this._AchievementsTabPage;
             //this.statisticsList.Enabled = this.checkBox1.Checked;
@@ -219,7 +227,7 @@ namespace SAM.Game
                 return;
             }
 
-            this._DownloadStatusLabel.Text = $"Downloading {this._IconQueue.Count} icons...";
+            this._DownloadStatusLabel.Text = T("Downloading {0} icons...", this._IconQueue.Count);
             this._DownloadStatusLabel.Visible = true;
 
             var info = this._IconQueue[0];
@@ -449,7 +457,7 @@ namespace SAM.Game
                 this._GameStatusLabel.Text = "Error when handling achievements retrieval.";
                 this.EnableInput();
                 MessageBox.Show(
-                    "Error when handling achievements retrieval:\n" + e,
+                    T("Error when handling achievements retrieval:\n") + e,
                     "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
@@ -465,14 +473,14 @@ namespace SAM.Game
                 this._GameStatusLabel.Text = "Error when handling stats retrieval.";
                 this.EnableInput();
                 MessageBox.Show(
-                    "Error when handling stats retrieval:\n" + e,
+                    T("Error when handling stats retrieval:\n") + e,
                     "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
                 return;
             }
 
-            this._GameStatusLabel.Text = $"Retrieved {this._AchievementListView.Items.Count} achievements and {this._StatisticsDataGridView.Rows.Count} statistics.";
+            this._GameStatusLabel.Text = T("Retrieved {0} achievements and {1} statistics.", this._AchievementListView.Items.Count, this._StatisticsDataGridView.Rows.Count);
             this.EnableInput();
 
             // 魔改：成就数过多时默认不下载图标（每次打开都要重新下载，很耗时）
@@ -804,8 +812,29 @@ namespace SAM.Game
             }
 
             this._GameStatusLabel.Text = this._LoadIconsCheckBox.Checked == true
-                ? "图标下载：开（点 Refresh 或重开游戏后生效）"
-                : "图标下载：关（点 Refresh 或重开游戏后生效）";
+                ? T("图标下载：开（点 Refresh 或重开游戏后生效）")
+                : T("图标下载：关（点 Refresh 或重开游戏后生效）");
+        }
+
+        /// <summary>切换界面语言：还原成原始 key 后按新语言重刷，并记住选择。</summary>
+        private void OnChangeLanguage(object sender, EventArgs e)
+        {
+            var picked = LanguagePickerForm.Ask(true);
+            if (string.IsNullOrEmpty(picked) == true)
+            {
+                return;
+            }
+
+            // 界面上的文本已经是上一个语言的译文，直接再翻译会因为 key 对不上而失效，
+            // 所以先按旧语言反查回原始 key，再按新语言刷一遍。
+            Localization.RestoreKeys(this);
+            Localization.SetLanguage(picked);
+            Localization.SaveLanguage(Localization.Current);
+            Localization.ApplyTo(this);
+
+            this._GameStatusLabel.Text = Localization.Current == "en"
+                ? "Interface language switched to English. Achievement names and descriptions still follow the Steam client language."
+                : "界面语言已切换。成就名称与描述仍跟随 Steam 客户端语言。";
         }
 
         private int StoreAchievements()
@@ -839,7 +868,7 @@ namespace SAM.Game
                 {
                     MessageBox.Show(
                         this,
-                        $"An error occurred while setting the state for {info.Id}, aborting store.",
+                        T("An error occurred while setting the state for {0}, aborting store.", info.Id),
                         "Error",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
@@ -873,7 +902,7 @@ namespace SAM.Game
                     {
                         MessageBox.Show(
                             this,
-                            $"An error occurred while setting the value for {stat.Id}, aborting store.",
+                            T("An error occurred while setting the value for {0}, aborting store.", stat.Id),
                             "Error",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
@@ -888,7 +917,7 @@ namespace SAM.Game
                     {
                         MessageBox.Show(
                             this,
-                            $"An error occurred while setting the value for {stat.Id}, aborting store.",
+                            T("An error occurred while setting the value for {0}, aborting store.", stat.Id),
                             "Error",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
@@ -976,7 +1005,7 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "An error occurred while storing, aborting.",
+                    T("An error occurred while storing, aborting."),
                     "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
@@ -1010,7 +1039,7 @@ namespace SAM.Game
 
             MessageBox.Show(
                 this,
-                $"Stored {achievements} achievements and {stats} statistics.",
+                T("Stored {0} achievements and {1} statistics.", achievements, stats),
                 "Information",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
@@ -1055,7 +1084,7 @@ namespace SAM.Game
             // 注意：这三个确认框都必须用 "!= Yes" 判断。
             // 用 "== No" 的话，点 X 关闭对话框返回的是 Cancel，会被当成"没选否"而继续执行重置。
             if (MessageBox.Show(
-                "Are you absolutely sure you want to reset stats?",
+                T("Are you absolutely sure you want to reset stats?"),
                 "Warning",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning) != DialogResult.Yes)
@@ -1064,13 +1093,13 @@ namespace SAM.Game
             }
 
             bool achievementsToo = DialogResult.Yes == MessageBox.Show(
-                "Do you want to reset achievements too?",
+                T("Do you want to reset achievements too?"),
                 "Question",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
 
             if (MessageBox.Show(
-                "Really really sure?",
+                T("Really really sure?"),
                 "Warning",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Error) != DialogResult.Yes)
@@ -1108,7 +1137,7 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "Sorry, but this is a protected achievement and cannot be managed with Steam Achievement Manager.",
+                    T("Sorry, but this is a protected achievement and cannot be managed with Steam Achievement Manager."),
                     "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
@@ -1355,8 +1384,8 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "已经有一个按节奏解锁的任务在运行了。",
-                    "提示",
+                    T("已经有一个按节奏解锁的任务在运行了。"),
+                    T("提示"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 return;
@@ -1366,8 +1395,8 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "成就数据还没有加载完，请稍等一下或者点一下 Refresh。",
-                    "提示",
+                    T("成就数据还没有加载完，请稍等一下或者点一下 Refresh。"),
+                    T("提示"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 return;
@@ -1383,9 +1412,9 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "这个游戏已经没有未解锁的成就了。\n\n" +
+                    T("这个游戏已经没有未解锁的成就了。\n\n") +
                     "如果你想重新刷一遍，可以先用工具栏的 Reset 重置成就，或者手动取消勾选某些成就。",
-                    "没有可解锁的成就",
+                    T("没有可解锁的成就"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 return;
@@ -1395,10 +1424,10 @@ namespace SAM.Game
             {
                 var answer = MessageBox.Show(
                     this,
-                    $"现在没有任何成就的全球解锁率数据（待处理 {total} 个）。\n\n" +
+                    T("现在没有任何成就的全球解锁率数据（待处理 {0} 个）。\n\n", total) +
                     "可能是 Steam 还没返回数据，或者这个游戏的成就没有公开统计。\n\n" +
                     "可以先点 Refresh 重试；也可以改用随机顺序解锁。要继续配置吗？",
-                    "缺少全球解锁率数据",
+                    T("缺少全球解锁率数据"),
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
 
@@ -1465,7 +1494,7 @@ namespace SAM.Game
 
                 MessageBox.Show(
                     this,
-                    "按当前条件没有需要解锁的成就。\n\n" +
+                    T("按当前条件没有需要解锁的成就。\n\n") +
                     $"这个游戏还有 {lockedTotal} 个成就没解锁，其中 {lockedWithRate} 个有全球解锁率数据" +
                     (lowestRate.HasValue == true
                         ? $"，最低的解锁率是 {lowestRate.Value:0.00}%。\n\n"
@@ -1473,7 +1502,7 @@ namespace SAM.Game
                     "常见原因：\n" +
                     "· 解锁率区间设得太窄，把它放宽（例如下限设 0、上限设 100）即可。\n" +
                     "· 勾选了“跳过已经解锁的成就”，而剩下的成就都已经解锁了。",
-                    "没有可解锁的成就",
+                    T("没有可解锁的成就"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 return;
@@ -1580,8 +1609,8 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "已经有一个解锁任务在运行了。",
-                    "提示",
+                    T("已经有一个解锁任务在运行了。"),
+                    T("提示"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 return;
@@ -1591,8 +1620,8 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "成就数据还没有加载完，请稍等一下或者点一下 Refresh。",
-                    "提示",
+                    T("成就数据还没有加载完，请稍等一下或者点一下 Refresh。"),
+                    T("提示"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 return;
@@ -1608,8 +1637,8 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "当前没有待解锁的成就。",
-                    "提示",
+                    T("当前没有待解锁的成就。"),
+                    T("提示"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 return;
@@ -1621,8 +1650,8 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "已有计划已失效，将重新排一份：\n" + invalidReason,
-                    "提示",
+                    T("已有计划已失效，将重新排一份：\n") + invalidReason,
+                    T("提示"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
                 SpreadProgress.Delete(this._GameId);
@@ -1707,8 +1736,8 @@ namespace SAM.Game
             {
                 MessageBox.Show(
                     this,
-                    "计划参数有问题：" + ex.Message,
-                    "参数不对",
+                    T("计划参数有问题：") + ex.Message,
+                    T("参数不对"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
                 return null;
@@ -2017,7 +2046,7 @@ namespace SAM.Game
                 this.FinishSpreadAll();
                 MessageBox.Show(
                     this,
-                    "长时间铺开出错了：" + error + "\n\n计划已保存，下次打开可以继续。",
+                    T("长时间铺开出错了：{0}\n\n计划已保存，下次打开可以继续。", error),
                     "错误",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);

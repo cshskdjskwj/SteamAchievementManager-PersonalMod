@@ -35,6 +35,8 @@ using System.Xml.XPath;
 using static SAM.Picker.InvariantShorthand;
 using APITypes = SAM.API.Types;
 
+using SAM.I18n;
+
 namespace SAM.Picker
 {
     internal partial class GamePicker : Form
@@ -61,6 +63,9 @@ namespace SAM.Picker
             this._LogoQueue = new();
 
             this.InitializeComponent();
+
+            // 魔改：按当前语言替换界面文本
+            Localization.ApplyTo(this);
 
             Bitmap blank = new(this._LogoImageList.ImageSize.Width, this._LogoImageList.ImageSize.Height);
             using (var g = Graphics.FromImage(blank))

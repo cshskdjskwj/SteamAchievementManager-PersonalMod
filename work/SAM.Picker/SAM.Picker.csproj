@@ -7,7 +7,7 @@
     <Copyright>Copyright © Gibbed 2019</Copyright>
   </PropertyGroup>
   <PropertyGroup>
-    <Version>7.0.41-personalmod.4</Version>
+    <Version>7.0.41-personalmod.5</Version>
     <AssemblyVersion>7.0.0.0</AssemblyVersion>
     <FileVersion>7.0.41.0</FileVersion>
   </PropertyGroup>
@@ -35,6 +35,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <!-- 魔改：复用 SAM.Game 的本地化表（单一数据源，不复制一份） -->
+  <ItemGroup>
+    <Compile Include="..\SAM.Game\Localization.cs" Link="Localization.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="MyListView.cs">

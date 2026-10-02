@@ -21,7 +21,7 @@
 ## 1. 这个魔改加了什么
 
 原版 SAM 只能「全部勾选 → 一起提交」，所有成就在同一秒解锁，一眼就能看出是刷的。
-本次魔改加了三件事：
+本次魔改加了四件事：
 
 ### ① 全球解锁率（Unlock Rate）列
 
@@ -68,6 +68,17 @@
 
 > **为什么需要这个模式**：见下面第 7 节——Steam 的解锁时间是**服务端**盖章的，客户端
 > 无法指定历史时间。所以想让成就看起来是在过去几个月里陆续解锁的，唯一办法就是真的花那些天。
+
+### ④ 界面多语言（简体中文 / 繁體中文 / English）
+
+- **首次运行会弹出语言选择窗口**，并**自动按你的 Steam 客户端语言预选**
+  （直接读 Steam 的 `Language` 配置，不需要 Steam 在运行；读不到时退回系统语言）。
+  选完会记住，之后不再询问。
+- 工具栏的 **「语言」** 按钮可以**在运行中随时切换**，立即生效、无需重启。
+- 也可以用命令行指定并记住：`SAM.Game.exe --lang zh-Hans`（可选 `en` / `zh-Hant`）。
+
+> **注意区分两件事**：这里换的是 **SAM 自己的界面语言**。成就的**名称与描述**是 Steam 提供的，
+> 跟随 **Steam 客户端语言**——想看成就名是中文，把 Steam 语言设成简体中文即可，SAM 会自动读取。
 
 ---
 
@@ -145,6 +156,8 @@ _src\dotnet\dotnet.exe build work\SAM.sln -c Release -p:Platform=x86 `
 | `work\SAM.Game\SpreadSchedule.cs` | 长时间铺开：按天排期 + 进度存档（`spread-<appid>.json`） |
 | `work\SAM.Game\SpreadPlanForm.cs` | 长时间铺开配置窗口（起止日期 / 每日配额 / 时间窗口 + 预览） |
 | `work\SAM.Game\GlobalAchievementPercentages.cs` | Steam Web API 回退实现（TLS1.2 + DataContract 解析） |
+| `work\SAM.Game\Localization.cs` | 运行时本地化层：翻译表 + 控件树替换 + 语言持久化（中英繁） |
+| `work\SAM.Game\LanguagePickerForm.cs` | 启动/切换用的语言选择窗口 |
 | `work\SAM.API\Types\GameAchievementData.cs` | 回调参数结构（name, percent 数组） |
 | `work\SAM.API\Callbacks\GameAchievementData.cs` | 回调 id 1102 + 原始缓冲解析 |
 | `work\Directory.Build.props` | 构建适配 |
