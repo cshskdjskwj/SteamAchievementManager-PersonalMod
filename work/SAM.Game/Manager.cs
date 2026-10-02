@@ -101,6 +101,12 @@ namespace SAM.Game
             // 魔改：按当前语言替换界面上的既有文本（含工具栏、列头、标签页）
             Localization.ApplyTo(this);
 
+            // 关键：上游把 ListView.Sorting 设成了 Ascending，控件会自己按第一列
+            // （成就名）自动排序，从而覆盖掉"按全球解锁率"的排序结果 —— 表现就是
+            // 点了排序按钮却像没生效。这里关掉自动排序，改由 GetAchievementItemsInOrder 控制。
+            this._AchievementListView.Sorting = SortOrder.None;
+            this._AchievementListView.ListViewItemSorter = null;
+
             this._MainTabControl.SelectedTab = this._AchievementsTabPage;
             //this.statisticsList.Enabled = this.checkBox1.Checked;
 
@@ -129,8 +135,10 @@ namespace SAM.Game
             };
 
             // 全球解锁率列（由魔改添加）：数据来自 Steam 客户端 / Steam Web API
-            this._AchievementListView.Columns[2].Text = "Unlock Time";
-            this._AchievementListView.Columns.Add("Unlock Rate", 90, HorizontalAlignment.Right);
+            // 这两列不硬写英文字面量，统一走 T() 取译文，
+            // 否则会覆盖掉上面 ApplyTo 已经翻译好的列头（"Unlock Time" 就是这么被漏掉的）。
+            this._AchievementListView.Columns[2].Text = T("Unlock Time");
+            this._AchievementListView.Columns.Add(T("Unlock Rate"), 90, HorizontalAlignment.Right);
 
             this._GameId = gameId;
             this._SteamClient = client;
@@ -677,8 +685,21 @@ namespace SAM.Game
                         : double.MinValue)
                     .ToList();
 
-            this._AchievementListView.Items.Clear();
-            this._AchievementListView.Items.AddRange(sorted.ToArray());
+            // 关键：Clear()/AddRange() 会触发 ItemCheck -> OnCheckAchievement，
+            // 而那个处理函数会再调一次 GetAchievements() 把列表按原始顺序重建，
+            // 结果就是"排完序立刻被打乱"。用同一个标志把这段保护起来。
+            this._IsUpdatingAchievementList = true;
+            try
+            {
+                this._AchievementListView.BeginUpdate();
+                this._AchievementListView.Items.Clear();
+                this._AchievementListView.Items.AddRange(sorted.ToArray());
+            }
+            finally
+            {
+                this._AchievementListView.EndUpdate();
+                this._IsUpdatingAchievementList = false;
+            }
         }
 
         private void GetStatistics()

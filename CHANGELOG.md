@@ -1,5 +1,41 @@
 # 更新记录
 
+## v7.0.41-personalmod.6 — 修复「按解锁率排序」无效 + 列头未翻译
+
+### 🐞 修复：点「解锁率排序」完全没效果（重要）
+
+**根因**：上游在设计器里把列表设成了自动排序——
+
+```csharp
+this._AchievementListView.Sorting = System.Windows.Forms.SortOrder.Ascending;
+```
+
+`ListView.Sorting` 一开，控件会**自己按第一列（成就名）字母序重排**，
+把 `OrderByDescending` 排好的次序立刻覆盖掉。表现就是：点了排序按钮，列表看着没动。
+
+**影响比表面上更大**：这条同样作用于「按率刷完 / 按天铺开」——
+也就是说**之前这两个功能的解锁顺序其实不是按解锁率来的**，而是按成就名字母序。
+
+修复：在构造时关掉控件的自动排序（`Sorting = None`、`ListViewItemSorter = null`），
+排序完全交给自己的代码控制。
+
+> 排查过程：先怀疑数据缺失 → 探针显示 `withRate=520 noRate=0`（数据完整）；
+> 再怀疑排序结果被打乱 → 探针显示"刚排完是降序的，但下一帧就乱了"，
+> 这才定位到是控件自身的自动排序。
+
+### 🐞 修复：中文环境下 `Unlock Time` / `Unlock Rate` 列头没翻译
+
+列头文本是在构造函数里**硬写英文字面量**的，而这发生在 `Localization.ApplyTo()` **之后**，
+所以翻译没机会作用到它们。改为统一走 `T(...)` 取译文。
+
+### 🐞 修复：排序结果可能被 `ItemCheck` 事件打断
+
+`Clear()` + `AddRange()` 会触发 `ItemCheck` → `OnCheckAchievement`，
+而那个处理函数里又会调用一次 `GetAchievements()` 把列表按原始顺序重建。
+现在用 `_IsUpdatingAchievementList` 把这段也保护起来。
+
+---
+
 ## v7.0.41-personalmod.5 — 界面多语言（简体 / 繁体 / 英文）
 
 ### ✨ 新增：界面多语言 + 启动时选择语言
